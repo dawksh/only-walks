@@ -1,0 +1,78 @@
+{
+    "project": "Only Walks",
+    "language": "Swift 5.9+",
+    "platform": "iOS 15.0+",
+    "architecture": "Local-first, Core Data, CloudKit optional",
+    "core_frameworks": [
+        "Core Location",
+        "MapKit",
+        "Core Graphics",
+        "Core Data",
+        "HealthKit (optional)"
+    ],
+    "authentication": {
+        "biometric": true,
+        "keychain": true,
+        "auto_login": true
+    },
+    "ui": {
+        "home_grid": "UICollectionView, adaptive columns, doodle thumbnails",
+        "doodle_render": "Douglas-Peucker, CGContext, pencil effect, cache images",
+        "walk_detail": "Hero animation, metrics, clean typography",
+        "start_button": "Fixed, full-width, stateful"
+    },
+    "tracking": {
+        "background": true,
+        "adaptive_gps": true,
+        "pause_detection": "2min+ stationary",
+        "metrics": [
+            "distance",
+            "pace",
+            "duration"
+        ],
+        "raw_data": true
+    },
+    "performance": {
+        "scrolling": "60fps",
+        "doodle_render": "<100ms",
+        "memory": "<100MB/1000+ walks",
+        "battery": "adaptive GPS, efficient queries"
+    },
+    "storage": {
+        "compression": "binary encoding",
+        "pruning": "old walks",
+        "cache": "doodle images"
+    },
+    "design": {
+        "colors": {
+            "primary": "#007AFF",
+            "background": "system",
+            "stroke": "#36454F",
+            "text": "system label"
+        },
+        "typography": {
+            "header": "SF Pro Display Bold 24pt",
+            "metrics": "SF Pro Text Medium 18pt",
+            "body": "SF Pro Text Regular 16pt"
+        },
+        "spacing": {
+            "grid": "16pt horiz, 12pt vert",
+            "cell": "8pt",
+            "button": "20pt",
+            "detail": "24pt"
+        }
+    },
+    "animation": {
+        "hero": "UIView.animate, spring",
+        "live_tracking": "CADisplayLink",
+        "button": "Core Animation"
+    },
+    "testing": {
+        "unit": "GPS processing",
+        "ui": "critical flows",
+        "performance": "monitoring"
+    },
+    "accessibility": true,
+    "functional_programming": true,
+    "comments": "Omit unless requested"
+}
