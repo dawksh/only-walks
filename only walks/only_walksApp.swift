@@ -12,7 +12,7 @@ final class CoreDataStack: ObservableObject {
     let container: NSPersistentContainer
     var context: NSManagedObjectContext { container.viewContext }
     init() {
-        container = NSPersistentContainer(name: "OnlyWalks")
+        container = NSPersistentContainer(name: "WalkModel")
         container.loadPersistentStores { _, _ in }
     }
     func save() {

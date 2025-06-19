@@ -8,11 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		527147422E0437E000831E2A /* IndieFlower-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 527147412E0437E000831E2A /* IndieFlower-Regular.ttf */; };
+		527147632E0443D000831E2A /* WalkModel.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 527147612E0443D000831E2A /* WalkModel.xcdatamodeld */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		5271472C2E0434C800831E2A /* only walks.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "only walks.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		527147412E0437E000831E2A /* IndieFlower-Regular.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "IndieFlower-Regular.ttf"; sourceTree = "<group>"; };
+		527147622E0443D000831E2A /* WalkModel.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = WalkModel.xcdatamodel; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -37,6 +39,7 @@
 		527147232E0434C800831E2A = {
 			isa = PBXGroup;
 			children = (
+				527147612E0443D000831E2A /* WalkModel.xcdatamodeld */,
 				527147412E0437E000831E2A /* IndieFlower-Regular.ttf */,
 				5271472E2E0434C800831E2A /* only walks */,
 				5271472D2E0434C800831E2A /* Products */,
@@ -126,6 +129,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				527147632E0443D000831E2A /* WalkModel.xcdatamodeld in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -333,6 +337,19 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCVersionGroup section */
+		527147612E0443D000831E2A /* WalkModel.xcdatamodeld */ = {
+			isa = XCVersionGroup;
+			children = (
+				527147622E0443D000831E2A /* WalkModel.xcdatamodel */,
+			);
+			currentVersion = 527147622E0443D000831E2A /* WalkModel.xcdatamodel */;
+			path = WalkModel.xcdatamodeld;
+			sourceTree = "<group>";
+			versionGroupType = wrapper.xcdatamodel;
+		};
+/* End XCVersionGroup section */
 	};
 	rootObject = 527147242E0434C800831E2A /* Project object */;
 }
