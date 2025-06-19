@@ -43,7 +43,7 @@ struct HomeView: View {
                 }
                 .animation(.spring(), value: isTracking)
                 if animatingDoodle, let animPath = animatingPath, let animId = animatingWalkId {
-                    DoodleView(path: animPath)
+                    DoodleView(path: animPath, showMarkers: true)
                         .frame(width: 220, height: 220)
                         .matchedGeometryEffect(id: animId, in: doodleAnim)
                         .zIndex(2)
@@ -80,7 +80,7 @@ struct HomeView: View {
     var trackingView: some View {
         VStack(spacing: 0) {
             Spacer()
-            DoodleView(path: path)
+            DoodleView(path: path, showMarkers: true)
                 .frame(width: 220, height: 220)
                 .opacity(animatingDoodle ? 0 : 1)
             HStack(spacing: 32) {
@@ -240,6 +240,13 @@ struct WalkTrackingView: View {
 
 struct DoodleView: View {
     let path: [CLLocationCoordinate2D]
+    let showMarkers: Bool
+    
+    init(path: [CLLocationCoordinate2D], showMarkers: Bool = false) {
+        self.path = path
+        self.showMarkers = showMarkers
+    }
+    
     var body: some View {
         let simplified = simplifyPath(path, tolerance: 3.0)
         return GeometryReader { geo in
@@ -255,6 +262,8 @@ struct DoodleView: View {
                 let scale = min((size.width - 2 * margin) / w, (size.height - 2 * margin) / h)
                 let offsetX = (size.width - CGFloat(w) * scale) / 2
                 let offsetY = (size.height - CGFloat(h) * scale) / 2
+                
+                // Draw path
                 var p = Path()
                 for (i, c) in simplified.enumerated() {
                     let x = CGFloat(c.longitude - minLon) * scale + offsetX
@@ -262,6 +271,35 @@ struct DoodleView: View {
                     if i == 0 { p.move(to: CGPoint(x: x, y: y)) } else { p.addLine(to: CGPoint(x: x, y: y)) }
                 }
                 ctx.stroke(p, with: .color(.blue), lineWidth: 2)
+                
+                if showMarkers {
+                    // Draw start marker (circle)
+                    if let start = simplified.first {
+                        let x = CGFloat(start.longitude - minLon) * scale + offsetX
+                        let y = size.height - (CGFloat(start.latitude - minLat) * scale + offsetY)
+                        let startMarker = Path { path in
+                            path.addEllipse(in: CGRect(x: x - 4, y: y - 4, width: 8, height: 8))
+                        }
+                        ctx.stroke(startMarker, with: .color(.blue), lineWidth: 2)
+                    }
+                    
+                    // Draw end marker (x)
+                    if let end = simplified.last {
+                        let x = CGFloat(end.longitude - minLon) * scale + offsetX
+                        let y = size.height - (CGFloat(end.latitude - minLat) * scale + offsetY)
+                        let size: CGFloat = 6
+                        let endMarker1 = Path { path in
+                            path.move(to: CGPoint(x: x - size, y: y - size))
+                            path.addLine(to: CGPoint(x: x + size, y: y + size))
+                        }
+                        let endMarker2 = Path { path in
+                            path.move(to: CGPoint(x: x - size, y: y + size))
+                            path.addLine(to: CGPoint(x: x + size, y: y - size))
+                        }
+                        ctx.stroke(endMarker1, with: .color(.blue), lineWidth: 2)
+                        ctx.stroke(endMarker2, with: .color(.blue), lineWidth: 2)
+                    }
+                }
             }
         }
     }
@@ -279,7 +317,7 @@ struct WalkDetailView: View {
             Color(red: 0.929, green: 0.918, blue: 0.914).ignoresSafeArea()
             VStack(spacing: 32) {
                 ZStack {
-                    DoodleView(path: walk.path)
+                    DoodleView(path: walk.path, showMarkers: true)
                         .frame(width: 220, height: 140)
                         .matchedGeometryEffect(id: walk.id, in: doodleAnim, isSource: true)
                         .clipped()
