@@ -6,7 +6,7 @@
 -   [ ] Doodle rendering: Douglas-Peucker, pencil effect, caching
 -   [ ] Walk detail view: hero animation, metrics, typography
 -   [ ] Start Walk button: fixed, full-width, stateful
--   [ ] Walk tracking: background, adaptive GPS, real-time path, auto-pause
+-   [x] Walk tracking: background, adaptive GPS, real-time path, auto-pause
 -   [ ] Data storage: Core Data, CloudKit sync (optional)
 -   [ ] Performance: efficient queries, memory, battery
 -   [ ] Testing: unit/UI tests, accessibility

@@ -50,13 +50,17 @@ struct HomeView: View {
     }
     var trackingView: some View {
         VStack(spacing: 0) {
-            VStack(spacing: 24) {
-                Text("elapsed: \(Int(elapsed))s")
-                Text("distance: \(distance, specifier: "%.1f")m")
-                Text("points: \(path.count)")
+            Spacer()
+            DoodleView(path: path)
+                .frame(width: 220, height: 220)
+            HStack(spacing: 32) {
+                Text("pace: \(distance > 0 ? String(format: "%.1f", elapsed / max(distance, 1)) : "-") s/m")
+                Text("time: \(Int(elapsed))s")
+                Text("dist: \(distance, specifier: "%.1f")m")
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(red: 0.929, green: 0.918, blue: 0.914).ignoresSafeArea())
+            .font(.system(size: 18, weight: .medium, design: .rounded))
+            .padding(.vertical, 24)
+            Spacer()
             Button(action: {
                 withAnimation(.spring()) {
                     let walk = Walk(id: UUID(), startDate: startDate ?? Date(), endDate: Date(), path: path, distance: distance, duration: elapsed)
@@ -84,6 +88,7 @@ struct HomeView: View {
             .padding(.bottom, 20)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
+        .background(Color(red: 0.929, green: 0.918, blue: 0.914).ignoresSafeArea())
     }
     var notTrackingView: some View {
         VStack(spacing: 0) {
