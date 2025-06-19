@@ -225,21 +225,22 @@ struct WalkTrackingView: View {
 struct DoodleView: View {
     let path: [CLLocationCoordinate2D]
     var body: some View {
-        GeometryReader { geo in
+        let simplified = simplifyPath(path, tolerance: 3.0)
+        return GeometryReader { geo in
             Canvas { ctx, size in
-                guard path.count > 1 else { return }
+                guard simplified.count > 1 else { return }
                 let margin: CGFloat = 10
-                let minLat = path.map { $0.latitude }.min() ?? 0
-                let maxLat = path.map { $0.latitude }.max() ?? 1
-                let minLon = path.map { $0.longitude }.min() ?? 0
-                let maxLon = path.map { $0.longitude }.max() ?? 1
+                let minLat = simplified.map { $0.latitude }.min() ?? 0
+                let maxLat = simplified.map { $0.latitude }.max() ?? 1
+                let minLon = simplified.map { $0.longitude }.min() ?? 0
+                let maxLon = simplified.map { $0.longitude }.max() ?? 1
                 let w = max(maxLon - minLon, 0.0001)
                 let h = max(maxLat - minLat, 0.0001)
                 let scale = min((size.width - 2 * margin) / w, (size.height - 2 * margin) / h)
                 let offsetX = (size.width - CGFloat(w) * scale) / 2
                 let offsetY = (size.height - CGFloat(h) * scale) / 2
                 var p = Path()
-                for (i, c) in path.enumerated() {
+                for (i, c) in simplified.enumerated() {
                     let x = CGFloat(c.longitude - minLon) * scale + offsetX
                     let y = size.height - (CGFloat(c.latitude - minLat) * scale + offsetY)
                     if i == 0 { p.move(to: CGPoint(x: x, y: y)) } else { p.addLine(to: CGPoint(x: x, y: y)) }

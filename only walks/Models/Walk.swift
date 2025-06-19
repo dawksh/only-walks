@@ -6,9 +6,14 @@ struct CLLocationCoordinate2D: Codable, Hashable {
     var latitude: Double
     var longitude: Double
     func distance(from other: CLLocationCoordinate2D) -> Double {
-        let dx = latitude - other.latitude
-        let dy = longitude - other.longitude
-        return sqrt(dx * dx + dy * dy) * 111_000
+        let r = 6371000.0
+        let lat1 = latitude * .pi / 180
+        let lat2 = other.latitude * .pi / 180
+        let dlat = (other.latitude - latitude) * .pi / 180
+        let dlon = (other.longitude - longitude) * .pi / 180
+        let a = sin(dlat/2) * sin(dlat/2) + cos(lat1) * cos(lat2) * sin(dlon/2) * sin(dlon/2)
+        let c = 2 * atan2(sqrt(a), sqrt(1-a))
+        return r * c
     }
 }
 
@@ -66,5 +71,42 @@ func deleteWalk(_ walk: Walk, _ context: NSManagedObjectContext) {
     if let entities = try? context.fetch(req) {
         for entity in entities { context.delete(entity) }
         try? context.save()
+    }
+}
+
+func simplifyPath(_ path: [CLLocationCoordinate2D], tolerance: Double) -> [CLLocationCoordinate2D] {
+    guard path.count > 2 else { return path }
+    func perpendicularDistance(_ p: CLLocationCoordinate2D, _ a: CLLocationCoordinate2D, _ b: CLLocationCoordinate2D) -> Double {
+        let dx = b.longitude - a.longitude
+        let dy = b.latitude - a.latitude
+        if dx == 0 && dy == 0 { return p.distance(from: a) }
+        let t = ((p.longitude - a.longitude) * dx + (p.latitude - a.latitude) * dy) / (dx * dx + dy * dy)
+        let tClamped = max(0, min(1, t))
+        let proj = CLLocationCoordinate2D(latitude: a.latitude + tClamped * dy, longitude: a.longitude + tClamped * dx)
+        return p.distance(from: proj)
+    }
+    func dp(_ pts: [CLLocationCoordinate2D]) -> [CLLocationCoordinate2D] {
+        if pts.count < 3 { return pts }
+        let a = pts.first!, b = pts.last!
+        let (maxDist, idx) = pts.enumerated().dropFirst().dropLast().map { (i, p) in (perpendicularDistance(p, a, b), i) }.max(by: { $0.0 < $1.0 }) ?? (0, 0)
+        if maxDist > tolerance {
+            let left = dp(Array(pts[0...idx]))
+            let right = dp(Array(pts[idx...]))
+            return left.dropLast() + right
+        } else {
+            return [a, b]
+        }
+    }
+    return dp(path)
+}
+
+extension Walk {
+    var paceKmHr: Double? { distance > 0 && duration > 0 ? (distance / duration) * 3.6 : nil }
+    var formattedDuration: String? {
+        guard duration > 0 else { return nil }
+        let h = Int(duration) / 3600
+        let m = (Int(duration) % 3600) / 60
+        let s = Int(duration) % 60
+        return String(format: "%02d:%02d:%02d", h, m, s)
     }
 } 
