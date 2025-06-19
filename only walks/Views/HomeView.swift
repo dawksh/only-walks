@@ -26,26 +26,51 @@ struct HomeView: View {
     @State var startDate: Date? = nil
     @StateObject var location = LocationTracker()
     let columns: [GridItem] = [GridItem(.adaptive(minimum: 120), spacing: 8)]
+    @Namespace var doodleAnim
+    @State var animatingDoodle = false
+    @State var animatingPath: [CLLocationCoordinate2D]? = nil
+    @State var animatingWalkId: UUID? = nil
+    @State var selectedWalk: Walk? = nil
     var body: some View {
-        ZStack(alignment: .bottom) {
-            Group {
-                if isTracking {
-                    trackingView
-                } else {
-                    notTrackingView
+        NavigationView {
+            ZStack(alignment: .bottom) {
+                Group {
+                    if isTracking {
+                        trackingView
+                    } else {
+                        notTrackingView
+                    }
+                }
+                .animation(.spring(), value: isTracking)
+                if animatingDoodle, let animPath = animatingPath, let animId = animatingWalkId {
+                    DoodleView(path: animPath)
+                        .frame(width: 220, height: 220)
+                        .matchedGeometryEffect(id: animId, in: doodleAnim)
+                        .zIndex(2)
                 }
             }
-            .animation(.spring(), value: isTracking)
-        }
-        .onAppear { walks = loadWalks(core.context) }
-        .onChange(of: location.locations) {
-            guard isTracking else { return }
-            let coords = location.locations.map { CLLocationCoordinate2D(latitude: $0.coordinate.latitude, longitude: $0.coordinate.longitude) }
-            path = coords
-            distance = totalDistance(path)
-        }
-        .onChange(of: isTracking) { tracking in
-            if tracking { startTimer() } else { stopTimer() }
+            .onAppear { walks = loadWalks(core.context).sorted { ($0.endDate ?? $0.startDate) > ($1.endDate ?? $1.startDate) } }
+            .onChange(of: location.locations) {
+                guard isTracking else { return }
+                let filtered = location.locations.filter { $0.horizontalAccuracy < 20 }
+                let coords = filtered.reduce(into: [CLLocationCoordinate2D]()) { arr, loc in
+                    let coord = CLLocationCoordinate2D(latitude: loc.coordinate.latitude, longitude: loc.coordinate.longitude)
+                    if let last = arr.last {
+                        if last.distance(from: coord) >= 3 { arr.append(coord) }
+                    } else {
+                        arr.append(coord)
+                    }
+                }
+                path = coords
+                distance = totalDistance(path)
+            }
+            .onChange(of: isTracking) { tracking in
+                if tracking { startTimer() } else { stopTimer() }
+            }
+            .background(
+                NavigationLink(destination: selectedWalk.map { WalkDetailView(walk: $0, doodleAnim: doodleAnim, walks: $walks, selectedWalk: $selectedWalk).environmentObject(core) }, isActive: Binding(get: { selectedWalk != nil }, set: { if !$0 { selectedWalk = nil } })) { EmptyView() }
+                    .hidden()
+            )
         }
     }
     var trackingView: some View {
@@ -53,6 +78,7 @@ struct HomeView: View {
             Spacer()
             DoodleView(path: path)
                 .frame(width: 220, height: 220)
+                .opacity(animatingDoodle ? 0 : 1)
             HStack(spacing: 32) {
                 Text("pace: \(distance > 0 ? String(format: "%.1f", elapsed / max(distance, 1)) : "-") s/m")
                 Text("time: \(Int(elapsed))s")
@@ -62,17 +88,26 @@ struct HomeView: View {
             .padding(.vertical, 24)
             Spacer()
             Button(action: {
-                withAnimation(.spring()) {
-                    let walk = Walk(id: UUID(), startDate: startDate ?? Date(), endDate: Date(), path: path, distance: distance, duration: elapsed)
-                    saveWalk(walk, core.context)
-                    walks = loadWalks(core.context)
-                    trackedWalk = nil
-                    isTracking = false
-                    elapsed = 0
-                    distance = 0
-                    path = []
-                    startDate = nil
-                    location.stop()
+                let newId = UUID()
+                animatingWalkId = newId
+                animatingPath = path
+                animatingDoodle = true
+                let walk = Walk(id: newId, startDate: startDate ?? Date(), endDate: Date(), path: path, distance: distance, duration: elapsed)
+                saveWalk(walk, core.context)
+                walks = loadWalks(core.context).sorted { ($0.endDate ?? $0.startDate) > ($1.endDate ?? $1.startDate) }
+                trackedWalk = nil
+                isTracking = false
+                elapsed = 0
+                distance = 0
+                path = []
+                startDate = nil
+                location.stop()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                    withAnimation(.spring()) {
+                        animatingDoodle = false
+                        animatingWalkId = nil
+                        animatingPath = nil
+                    }
                 }
             }) {
                 HStack {
@@ -96,22 +131,24 @@ struct HomeView: View {
                 Spacer()
                 Text("no walks yet")
                     .font(.custom("IndieFlower", size: 22))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.primary)
                 Spacer()
             } else {
                 ScrollView {
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(walks) { walk in
                             DoodleView(path: walk.path)
-                                .background(Color.white)
                                 .frame(height: 120)
                                 .cornerRadius(16)
+                                .matchedGeometryEffect(id: walk.id, in: doodleAnim, isSource: true)
+                                .opacity(selectedWalk?.id == walk.id ? 0 : 1)
+                                .onTapGesture { selectedWalk = walk }
                         }
                     }
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
                 }
-                .refreshable { walks = loadWalks(core.context) }
+                .refreshable { walks = loadWalks(core.context).sorted { ($0.endDate ?? $0.startDate) > ($1.endDate ?? $1.startDate) } }
             }
             Button(action: { withAnimation(.spring()) {
                 isTracking = true
@@ -162,7 +199,7 @@ final class LocationTracker: NSObject, ObservableObject, CLLocationManagerDelega
         locations = []
     }
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locs: [CLLocation]) {
-        locations.append(contentsOf: locs)
+        locations.append(contentsOf: locs.filter { $0.horizontalAccuracy < 20 })
     }
 }
 
@@ -191,13 +228,14 @@ struct DoodleView: View {
         GeometryReader { geo in
             Canvas { ctx, size in
                 guard path.count > 1 else { return }
+                let margin: CGFloat = 10
                 let minLat = path.map { $0.latitude }.min() ?? 0
                 let maxLat = path.map { $0.latitude }.max() ?? 1
                 let minLon = path.map { $0.longitude }.min() ?? 0
                 let maxLon = path.map { $0.longitude }.max() ?? 1
-                let w = maxLon - minLon
-                let h = maxLat - minLat
-                let scale = min(size.width / (w == 0 ? 1 : w), size.height / (h == 0 ? 1 : h)) * 0.8
+                let w = max(maxLon - minLon, 0.0001)
+                let h = max(maxLat - minLat, 0.0001)
+                let scale = min((size.width - 2 * margin) / w, (size.height - 2 * margin) / h)
                 let offsetX = (size.width - CGFloat(w) * scale) / 2
                 let offsetY = (size.height - CGFloat(h) * scale) / 2
                 var p = Path()
@@ -209,5 +247,52 @@ struct DoodleView: View {
                 ctx.stroke(p, with: .color(.blue), lineWidth: 2)
             }
         }
+    }
+}
+
+struct WalkDetailView: View {
+    let walk: Walk
+    var doodleAnim: Namespace.ID
+    @EnvironmentObject var core: CoreDataStack
+    @Environment(\.presentationMode) var presentation
+    @Binding var walks: [Walk]
+    @Binding var selectedWalk: Walk?
+    var body: some View {
+        ZStack {
+            Color(red: 0.929, green: 0.918, blue: 0.914).ignoresSafeArea()
+            VStack(spacing: 32) {
+                ZStack {
+                    DoodleView(path: walk.path)
+                        .frame(width: 220, height: 140)
+                        .matchedGeometryEffect(id: walk.id, in: doodleAnim, isSource: true)
+                        .clipped()
+                }
+                HStack(spacing: 32) {
+                    Text("\(walk.distance > 0 ? String(format: "%.1f", walk.duration / max(walk.distance, 1)) : "-") s/m")
+                        .font(.custom("IndieFlower", size: 20))
+                        .foregroundColor(.primary)
+                    Text("\(Int(walk.duration))s")
+                        .font(.custom("IndieFlower", size: 20))
+                        .foregroundColor(.primary)
+                    Text("\(walk.distance, specifier: "%.1f")m")
+                        .font(.custom("IndieFlower", size: 20))
+                        .foregroundColor(.primary)
+                }
+                Text("delete walk")
+                    .font(.custom("IndieFlower", size: 20))
+                    .foregroundColor(.red)
+                    .onTapGesture {
+                        deleteWalk(walk, core.context)
+                        walks = loadWalks(core.context).sorted { ($0.endDate ?? $0.startDate) > ($1.endDate ?? $1.startDate) }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                            selectedWalk = nil
+                        }
+                    }
+            }
+            .padding()
+        }
+        .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
+        .toolbar { ToolbarItem(placement: .navigationBarLeading) { EmptyView() } }
     }
 } 

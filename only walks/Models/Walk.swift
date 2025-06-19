@@ -58,4 +58,13 @@ func loadWalks(_ context: NSManagedObjectContext) -> [Walk] {
     let req = NSFetchRequest<WalkEntity>(entityName: "WalkEntity")
     let entities = (try? context.fetch(req)) ?? []
     return entities.map { $0.walk }
+}
+
+func deleteWalk(_ walk: Walk, _ context: NSManagedObjectContext) {
+    let req = NSFetchRequest<WalkEntity>(entityName: "WalkEntity")
+    req.predicate = NSPredicate(format: "id == %@", walk.id as CVarArg)
+    if let entities = try? context.fetch(req) {
+        for entity in entities { context.delete(entity) }
+        try? context.save()
+    }
 } 
