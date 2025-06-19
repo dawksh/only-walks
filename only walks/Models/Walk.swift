@@ -27,16 +27,6 @@ func totalDistance(_ path: [CLLocationCoordinate2D]) -> Double {
     }
 }
 
-// @objc(WalkEntity)
-// final class WalkEntity: NSManagedObject {
-//     @NSManaged var id: UUID
-//     @NSManaged var startDate: Date
-//     @NSManaged var endDate: Date
-//     @NSManaged var pathData: Data
-//     @NSManaged var distance: Double
-//     @NSManaged var duration: Double
-// }
-
 extension WalkEntity {
     var walk: Walk {
         Walk(
