@@ -25,28 +25,13 @@ A clean, artistic approach to fitness tracking that transforms walking and runni
 
 ### Authentication & Data Storage
 
--   Local-first architecture with optional cloud sync
--   Biometric authentication (Face ID/Touch ID) preferred
--   Core Data for local persistence
--   CloudKit for cross-device synchronization
+-   Fully local architecture - no authentication required
+-   Core Data for local persistence exclusively
+-   All walk data remains on device
 
 ## Feature Specifications
 
-### 1. Authentication Flow
-
-**Requirements:**
-
--   App launches to login screen if user not authenticated
--   Support for biometric authentication
--   Simple account creation flow
--   Automatic login persistence
-
-**Technical Considerations:**
-
--   Keychain integration for secure credential storage
--   AuthenticationServices framework for secure authentication
-
-### 2. Home Screen (Walk Gallery)
+### 1. Home Screen (Walk Gallery)
 
 **UI Components:**
 
@@ -70,7 +55,7 @@ A clean, artistic approach to fitness tracking that transforms walking and runni
 -   Dynamic cell sizing based on walk duration/distance
 -   Smooth scrolling with prefetching
 
-### 3. Walk Detail View
+### 2. Walk Detail View
 
 **Transition:**
 
@@ -86,7 +71,7 @@ A clean, artistic approach to fitness tracking that transforms walking and runni
     -   **Duration:** Hours:minutes:seconds format
 -   Clean typography (SF Pro Display for headers, SF Pro Text for metrics)
 
-### 4. Start Walk Button
+### 3. Start Walk Button
 
 **Positioning:**
 
@@ -100,7 +85,7 @@ A clean, artistic approach to fitness tracking that transforms walking and runni
 -   Active: "Stop Walk" with stop icon + elapsed time
 -   Loading: Activity indicator during GPS acquisition
 
-### 5. Walk Tracking
+### 4. Walk Tracking
 
 **Core Functionality:**
 
@@ -119,10 +104,9 @@ A clean, artistic approach to fitness tracking that transforms walking and runni
 
 ### First Launch
 
-1. Authentication screen
+1. Home screen with empty state and animated pointer
 2. Location permissions request
 3. HealthKit permissions (optional)
-4. Empty state home screen with animated pointer
 
 ### Regular Usage
 
@@ -155,9 +139,10 @@ A clean, artistic approach to fitness tracking that transforms walking and runni
 
 ### Storage Management
 
--   Compress coordinate data using binary encoding
--   Implement walk data pruning for very old walks
--   Cache management for rendered doodles
+-   All coordinate data stored locally in Core Data
+-   No external backup or sync capabilities
+-   Implement local data pruning for storage optimization
+-   Cache management for rendered doodles on device only
 
 ## Design Specifications
 
