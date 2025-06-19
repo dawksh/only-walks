@@ -12,9 +12,13 @@ struct ContentView: View {
     var body: some View {
         Group {
             if authState.isAuthenticated {
-                Text("Walk Gallery")
+                Text("walk gallery".lowercased())
+                    .font(.custom("IndieFlower", size: 28))
             } else {
-                Button("Login") { authState.isAuthenticated = true }
+                Button(action: { authState.isAuthenticated = true }) {
+                    Text("login".lowercased())
+                        .font(.custom("IndieFlower", size: 24))
+                }
             }
         }
         .padding()

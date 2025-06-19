@@ -51,9 +51,9 @@
             "text": "system label"
         },
         "typography": {
-            "header": "SF Pro Display Bold 24pt",
-            "metrics": "SF Pro Text Medium 18pt",
-            "body": "SF Pro Text Regular 16pt"
+            "header": "doodle-like font, lowercase, 24pt",
+            "metrics": "doodle-like font, lowercase, 18pt",
+            "body": "doodle-like font, lowercase, 16pt"
         },
         "spacing": {
             "grid": "16pt horiz, 12pt vert",
@@ -74,5 +74,7 @@
     },
     "accessibility": true,
     "functional_programming": true,
-    "comments": "Omit unless requested"
+    "comments": "Omit unless requested",
+    "font": "Use a doodle-like font everywhere",
+    "text_case": "Use lowercase for all UI text"
 }
