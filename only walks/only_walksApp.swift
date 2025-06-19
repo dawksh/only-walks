@@ -6,8 +6,19 @@
 //
 
 import SwiftUI
+import CoreData
 
-final class CoreDataStack: ObservableObject {}
+final class CoreDataStack: ObservableObject {
+    let container: NSPersistentContainer
+    var context: NSManagedObjectContext { container.viewContext }
+    init() {
+        container = NSPersistentContainer(name: "OnlyWalks")
+        container.loadPersistentStores { _, _ in }
+    }
+    func save() {
+        try? context.save()
+    }
+}
 
 @main
 struct only_walksApp: App {
