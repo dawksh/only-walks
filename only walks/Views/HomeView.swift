@@ -71,6 +71,10 @@ struct HomeView: View {
                 NavigationLink(destination: selectedWalk.map { WalkDetailView(walk: $0, doodleAnim: doodleAnim, walks: $walks, selectedWalk: $selectedWalk).environmentObject(core) }, isActive: Binding(get: { selectedWalk != nil }, set: { if !$0 { selectedWalk = nil } })) { EmptyView() }
                     .hidden()
             )
+            .highPriorityGesture(DragGesture(minimumDistance: 10, coordinateSpace: .local)
+                .onEnded { value in
+                    if value.translation.width > 20 { selectedWalk = nil }
+                })
         }
     }
     var trackingView: some View {
@@ -80,9 +84,21 @@ struct HomeView: View {
                 .frame(width: 220, height: 220)
                 .opacity(animatingDoodle ? 0 : 1)
             HStack(spacing: 32) {
-                Text("pace: \(distance > 0 ? String(format: "%.1f", elapsed / max(distance, 1)) : "-") s/m")
-                Text("time: \(Int(elapsed))s")
-                Text("dist: \(distance, specifier: "%.1f")m")
+                if distance > 0 && elapsed > 0 {
+                    let pace = (elapsed / 60) / (distance / 1000)
+                    let minutes = Int(pace)
+                    let seconds = Int((pace - Double(minutes)) * 60)
+                    Text("pace: \(String(format: "%d:%02d", minutes, seconds)) min/km")
+                }
+                if elapsed > 0 {
+                    let h = Int(elapsed) / 3600
+                    let m = (Int(elapsed) % 3600 / 60)
+                    let s = Int(elapsed) % 60
+                    Text("time: \(String(format: "%02d:%02d:%02d", h, m, s))")
+                }
+                if distance > 0 {
+                    Text("dist: \(distance / 1000, specifier: "%.2f") km")
+                }
             }
             .font(.system(size: 18, weight: .medium, design: .rounded))
             .padding(.vertical, 24)
@@ -269,15 +285,21 @@ struct WalkDetailView: View {
                         .clipped()
                 }
                 HStack(spacing: 32) {
-                    Text("\(walk.distance > 0 ? String(format: "%.1f", walk.duration / max(walk.distance, 1)) : "-") s/m")
-                        .font(.custom("IndieFlower", size: 20))
-                        .foregroundColor(.primary)
-                    Text("\(Int(walk.duration))s")
-                        .font(.custom("IndieFlower", size: 20))
-                        .foregroundColor(.primary)
-                    Text("\(walk.distance, specifier: "%.1f")m")
-                        .font(.custom("IndieFlower", size: 20))
-                        .foregroundColor(.primary)
+                    if walk.distance > 0 && walk.duration > 0 {
+                        Text(walk.formattedPace ?? "--:-- /km")
+                            .font(.custom("IndieFlower", size: 20))
+                            .foregroundColor(.primary)
+                    }
+                    if let t = walk.formattedDuration {
+                        Text(t)
+                            .font(.custom("IndieFlower", size: 20))
+                            .foregroundColor(.primary)
+                    }
+                    if walk.distance > 0 {
+                        Text("\(walk.distance / 1000, specifier: "%.2f") km")
+                            .font(.custom("IndieFlower", size: 20))
+                            .foregroundColor(.primary)
+                    }
                 }
                 Text("delete walk")
                     .font(.custom("IndieFlower", size: 20))
@@ -292,6 +314,10 @@ struct WalkDetailView: View {
             }
             .padding()
         }
+        .gesture(DragGesture(minimumDistance: 10, coordinateSpace: .local)
+            .onEnded { value in
+                if value.translation.width > 20 { selectedWalk = nil }
+            })
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
         .toolbar { ToolbarItem(placement: .navigationBarLeading) { EmptyView() } }

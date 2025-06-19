@@ -101,7 +101,13 @@ func simplifyPath(_ path: [CLLocationCoordinate2D], tolerance: Double) -> [CLLoc
 }
 
 extension Walk {
-    var paceKmHr: Double? { distance > 0 && duration > 0 ? (distance / duration) * 3.6 : nil }
+    var paceMinKm: Double? { distance > 0 && duration > 0 ? (duration / 60) / (distance / 1000) : nil }
+    var formattedPace: String? {
+        guard let pace = paceMinKm else { return nil }
+        let minutes = Int(pace)
+        let seconds = Int((pace - Double(minutes)) * 60)
+        return String(format: "%d:%02d min/km", minutes, seconds)
+    }
     var formattedDuration: String? {
         guard duration > 0 else { return nil }
         let h = Int(duration) / 3600
