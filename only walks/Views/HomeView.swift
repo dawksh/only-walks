@@ -31,6 +31,7 @@ struct HomeView: View {
     @State var animatingPath: [CLLocationCoordinate2D]? = nil
     @State var animatingWalkId: UUID? = nil
     @State var selectedWalk: Walk? = nil
+    @State var timer: Timer? = nil
     var body: some View {
         NavigationView {
             ZStack(alignment: .bottom) {
@@ -49,7 +50,20 @@ struct HomeView: View {
                         .zIndex(2)
                 }
             }
-            .onAppear { walks = loadWalks(core.context).sorted { ($0.endDate ?? $0.startDate) > ($1.endDate ?? $1.startDate) } }
+            .onAppear {
+                walks = loadWalks(core.context).sorted { ($0.endDate ?? $0.startDate) > ($1.endDate ?? $1.startDate) }
+                NotificationCenter.default.addObserver(forName: UIApplication.willEnterForegroundNotification, object: nil, queue: .main) { _ in
+                    updateElapsed()
+                    startUITimer()
+                }
+                NotificationCenter.default.addObserver(forName: UIApplication.didEnterBackgroundNotification, object: nil, queue: .main) { _ in
+                    stopUITimer()
+                }
+            }
+            .onDisappear {
+                NotificationCenter.default.removeObserver(self)
+                stopUITimer()
+            }
             .onChange(of: location.locations) {
                 guard isTracking else { return }
                 let filtered = location.locations.filter { $0.horizontalAccuracy < 20 }
@@ -193,11 +207,27 @@ struct HomeView: View {
         .background(Color(red: 0.929, green: 0.918, blue: 0.914).ignoresSafeArea())
     }
     func startTimer() {
-        Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { timer in
-            if isTracking { elapsed += 1 } else { timer.invalidate() }
+        updateElapsed()
+        startUITimer()
+    }
+    func stopTimer() {
+        stopUITimer()
+    }
+    func updateElapsed() {
+        if isTracking, let start = startDate {
+            elapsed = Date().timeIntervalSince(start)
         }
     }
-    func stopTimer() {}
+    func startUITimer() {
+        stopUITimer()
+        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
+            updateElapsed()
+        }
+    }
+    func stopUITimer() {
+        timer?.invalidate()
+        timer = nil
+    }
 }
 
 final class LocationTracker: NSObject, ObservableObject, CLLocationManagerDelegate {
@@ -207,7 +237,7 @@ final class LocationTracker: NSObject, ObservableObject, CLLocationManagerDelega
         super.init()
         manager.delegate = self
         manager.desiredAccuracy = kCLLocationAccuracyBest
-        manager.allowsBackgroundLocationUpdates = false
+        manager.allowsBackgroundLocationUpdates = true
     }
     func start() {
         manager.requestWhenInUseAuthorization()
