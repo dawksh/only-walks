@@ -88,19 +88,21 @@ struct HomeView: View {
                     let pace = (elapsed / 60) / (distance / 1000)
                     let minutes = Int(pace)
                     let seconds = Int((pace - Double(minutes)) * 60)
-                    Text("pace: \(String(format: "%d:%02d", minutes, seconds)) min/km")
+                    Text("\(String(format: "%d:%02d", minutes, seconds)) min/km")
+                        .font(.custom("IndieFlower", size: 20))
                 }
                 if elapsed > 0 {
                     let h = Int(elapsed) / 3600
                     let m = (Int(elapsed) % 3600 / 60)
                     let s = Int(elapsed) % 60
-                    Text("time: \(String(format: "%02d:%02d:%02d", h, m, s))")
+                    Text("\(String(format: "%02d:%02d:%02d", h, m, s))")
+                        .font(.custom("IndieFlower", size: 20))
                 }
                 if distance > 0 {
-                    Text("dist: \(distance / 1000, specifier: "%.2f") km")
+                    Text("\(distance / 1000, specifier: "%.2f") km")
+                        .font(.custom("IndieFlower", size: 20))
                 }
             }
-            .font(.system(size: 18, weight: .medium, design: .rounded))
             .padding(.vertical, 24)
             Spacer()
             Button(action: {
@@ -150,7 +152,7 @@ struct HomeView: View {
                     .foregroundColor(.primary)
                 Spacer()
             } else {
-                ScrollView {
+                ScrollView(showsIndicators: true) {
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(walks) { walk in
                             DoodleView(path: walk.path)
@@ -164,6 +166,7 @@ struct HomeView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, 12)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .refreshable { walks = loadWalks(core.context).sorted { ($0.endDate ?? $0.startDate) > ($1.endDate ?? $1.startDate) } }
             }
             Button(action: { withAnimation(.spring()) {
@@ -305,59 +308,8 @@ struct DoodleView: View {
     }
 }
 
-struct WalkDetailView: View {
-    let walk: Walk
-    var doodleAnim: Namespace.ID
-    @EnvironmentObject var core: CoreDataStack
-    @Environment(\.presentationMode) var presentation
-    @Binding var walks: [Walk]
-    @Binding var selectedWalk: Walk?
-    var body: some View {
-        ZStack {
-            Color(red: 0.929, green: 0.918, blue: 0.914).ignoresSafeArea()
-            VStack(spacing: 32) {
-                ZStack {
-                    DoodleView(path: walk.path, showMarkers: true)
-                        .frame(width: 220, height: 140)
-                        .matchedGeometryEffect(id: walk.id, in: doodleAnim, isSource: true)
-                        .clipped()
-                }
-                HStack(spacing: 32) {
-                    if walk.distance > 0 && walk.duration > 0 {
-                        Text(walk.formattedPace ?? "--:-- /km")
-                            .font(.custom("IndieFlower", size: 20))
-                            .foregroundColor(.primary)
-                    }
-                    if let t = walk.formattedDuration {
-                        Text(t)
-                            .font(.custom("IndieFlower", size: 20))
-                            .foregroundColor(.primary)
-                    }
-                    if walk.distance > 0 {
-                        Text("\(walk.distance / 1000, specifier: "%.2f") km")
-                            .font(.custom("IndieFlower", size: 20))
-                            .foregroundColor(.primary)
-                    }
-                }
-                Text("delete walk")
-                    .font(.custom("IndieFlower", size: 20))
-                    .foregroundColor(.red)
-                    .onTapGesture {
-                        deleteWalk(walk, core.context)
-                        walks = loadWalks(core.context).sorted { ($0.endDate ?? $0.startDate) > ($1.endDate ?? $1.startDate) }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                            selectedWalk = nil
-                        }
-                    }
-            }
-            .padding()
-        }
-        .gesture(DragGesture(minimumDistance: 10, coordinateSpace: .local)
-            .onEnded { value in
-                if value.translation.width > 20 { selectedWalk = nil }
-            })
-        .navigationBarTitleDisplayMode(.inline)
-        .navigationBarBackButtonHidden(true)
-        .toolbar { ToolbarItem(placement: .navigationBarLeading) { EmptyView() } }
+struct Walk_Previews: PreviewProvider {
+    static var previews: some View {
+        HomeView()
     }
-} 
+}
